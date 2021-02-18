@@ -1,0 +1,136 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+setwd("D:\\PGP_BABI\\Advance Statistics\\Assignment")
+library(readxl)
+lesliedata=read_excel(file.choose())
+head(lesliedata,10)
+str(lesliedata)
+summary(lesliedata)
+attach(lesliedata)
+
+```
+
+
+```{r}
+# changing Flood and County to factors data type
+lesliedata$Flood=factor(lesliedata$Flood,levels = c("0","1"),labels = c("No","Yes"))
+lesliedata$County=factor(lesliedata$County,levels = c("0","1"),labels = c("San Mateo","Santa Clara"))
+str(lesliedata)
+
+summary(lesliedata)
+
+#checking for null values
+cbind(colSums(is.na(lesliedata)))
+```
+
+
+```{r}
+# univariate analysis and Outliers Check
+boxplot(lesliedata$Price)
+hist(lesliedata$Price)
+prop.table(table(lesliedata$County))
+prop.table(table(lesliedata$Flood))
+boxplot(lesliedata$Size)
+boxplot(lesliedata$Sewer)
+boxplot(lesliedata$Distance)
+boxplot(lesliedata$Elevation)
+boxplot(lesliedata$Date)
+```
+
+
+```{r}
+#Bivariate analysis 
+
+library(ggplot2)
+ggplot(data=lesliedata, aes(x=Flood, y=Price, fill=Flood))+geom_boxplot() # flood proned areas have less price
+
+ggplot(data=lesliedata, aes(x=County, y=Price, fill=County))+geom_boxplot() 
+
+ggplot(lesliedata, aes(fill=Flood, x=County, y=as.numeric(County))) +
+  geom_bar( stat="identity", position="fill")
+```
+
+#Scatter plots
+```{r}
+plot(lesliedata$Price,lesliedata$Size) # not that correalted
+plot(lesliedata$Price,lesliedata$Distance) # not that correlated
+plot(lesliedata$Price,lesliedata$Elevation) # present
+plot(lesliedata$Price,lesliedata$Sewer) # present
+plot(lesliedata$Price,lesliedata$Date) # present
+library(car)
+scatterplotMatrix(lesliedata[,-c(2,7)])
+```
+
+
+```{r}
+#correlation plot
+
+cor.leslie=cor(lesliedata[,-c(2,7)])
+cor.leslie
+library(corrplot)
+corrplot(cor.leslie,method="circle")
+```
+
+
+```{r}
+Model1=lm(lesliedata$Price~.,data = lesliedata)
+summary(Model1)
+```
+
+
+```{r}
+#model 2 Regression model without Distance
+Model2=lm(Price~. - Distance,data = lesliedata)
+summary(Model2)
+```
+
+
+```{r}
+# Model 2 with removing the outlier
+lesliedatanew=lesliedata[-26,]
+Model3=lm(Price~. - Distance,data = lesliedatanew)
+summary(Model3)
+
+```
+
+
+```{r}
+#Model 4 Regression model without Size and Distance
+Model4=lm(Price~. -Distance-Size, data = lesliedatanew)
+summary(Model4)
+```
+
+
+```{r}
+#Goodness of Fit and Validation checks
+vif(Model4)
+shapiro.test(Model4$residuals)
+confint(Model4)
+
+```
+
+
+```{r}
+#Prediction of the model
+Predicted=predict(Model4,lesliedatanew)
+plot(Predicted,col="red")
+lines(Predicted,col="red")
+lines(lesliedatanew$Price,col="blue")
+```
+
+
+
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.

@@ -1,0 +1,157 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+# Basic structure of the data set
+```{r}
+library(psych)
+cereal=read.csv("D:/PGP_BABI/Advance Statistics/Assignment/cereal.csv",header = TRUE)
+attach(cereal)
+dim(cereal)
+head(cereal,10)
+str(cereal)
+describe(cereal)
+library(DataExplorer)
+create_report(cereal)
+```
+
+
+# Checking null values and missing values 
+```{r}
+cbind(colSums(is.na(cereal)))
+boxplot(cereal[,2:26])
+
+# Few observations are found to be 6 , Replaced the 6 rating with 5
+cereal[cereal==6]
+cereal[cereal==6]=5
+summary(cereal)
+
+```
+
+
+```{r}
+# correlation plot to see the correlation between the variables.
+cor_cereal=cor(cereal[,-1])
+print(cor_cereal,digits = 2)
+library(corrplot)
+corrplot(cor_cereal,method="circle")
+
+
+```
+
+
+```{r}
+# Bartlett's test of sphericity :  tests the hypothesis that your correlation matrix is an identity matrix, which would indicate that your variables are unrelated 
+
+cortest.bartlett(cor_cereal,n=235,diag=TRUE)
+
+# #In the above test we see the p-value to be very less (nearing to zero)  and less than .05#
+#thus,we can "reject the null hypothesis that the correlation matrix is an identity matrix#
+#This effectively means that the matrix is factorable and varaibles are fairly correlated.
+
+```
+
+
+```{r}
+# The KMO tests the measure of Sampling Adequacy. 
+KMO(cor_cereal)
+
+# MSA =0.85 - high Kmo index indicating the sample is adequate
+```
+
+
+```{r}
+library(nFactors)
+ev=eigen(cor_cereal) #eigen vector matrix
+eigenvalues=ev$values #eigen values
+eigenvalues
+Factors=c(1:25)
+Scree=data.frame(Factors,eigenvalues)
+plot(Scree,main = "ScreePlot",col="Blue")
+lines(Scree,col="Red")
+```
+
+
+```{r}
+cereal_unrotate=principal(cereal[,-1],nfactors=5,rotate="none")
+print(cereal_unrotate,digits=3)
+cereal_rotate=principal(cereal[,-1],nfactors=5,rotate="varimax")
+print(cereal_rotate,digits=3,sort = TRUE)
+```
+
+
+```{r}
+fa.parallel(cereal[,-1], main = "Parallel Analysis Scree Plots")
+```
+
+
+```{r}
+cereal_unrotated=principal(cereal[,-1],nfactors=4,rotate="none")
+print(cereal_unrotated,digits=3)
+cereal_rotated=principal(cereal[,-1],nfactors=4,rotate="varimax")
+print(cereal_rotate,digits=3)
+```
+
+
+
+
+```{r}
+mydata=cereal[,-c(1,6)]  # Keeping aside the Easy variable
+cereal.final=principal(mydata,nfactors=4,rotate="varimax")
+print(cereal.final,digits=3)
+print(cereal.final,digits=3,cut=0.4,sort = TRUE)
+plot(cereal.final$loadings[,1:2])
+text(cereal.final$loadings[,1:2], labels=names(mydata), cex = 0.6)
+```
+
+
+```{r}
+#RC1 - Nutritious,Health,Fibre,Natural,Filling,Energy,Quality,Satisfying,Regular - Health & Wellness
+HealthNwellness_RC1 = c(26,14,4,3,2,9,23,8,19) 
+
+#RC2 - Sugar,Salt,Sweet,Calories,Process - Taste & Flavour
+TasteNFlavour_RC2 = c(20,5,7,16,22)
+
+#RC3 - Kids , Family ,Economical -- Family & Household
+FamilyNHousehold_RC3= c(11,15,13)  
+
+#RC4 - Plain,Treat,Soggy,Boring,Crisp,Fun,Fruit  - Texture & Appearance
+TextureNAppearance_RC4 = c(17,24,12,25,18,10,21)
+
+```
+
+
+```{r}
+## Aggregating the mean of the above combined attributes for each observation/row 
+## into a new column in cereal dataset.
+cereal$HealthNwellness = apply(cereal[,HealthNwellness_RC1],1,FUN = mean)
+cereal$TasteNFlavour = apply(cereal[,TasteNFlavour_RC2],1,FUN = mean)
+cereal$FamilyNHousehold = apply(cereal[,FamilyNHousehold_RC3],1,FUN = mean)
+cereal$TextureNAppearance = apply(cereal[,TextureNAppearance_RC4],1,FUN = mean)
+
+```
+
+
+```{r}
+#new cereal data set with aggregated values by the cereal brand for newly build factors along with Easy attribute.
+
+cereal_new=aggregate(cereal[,c(6,27,28,29,30)],by = list(cereal[,1]),FUN = mean)
+print(cereal_new,digits=2)
+```
+
+
+
+
+
+
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
